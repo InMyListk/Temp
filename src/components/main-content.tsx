@@ -74,7 +74,7 @@ export function MainContent() {
                             <Button
                                 size="icon"
                                 className="h-7 w-7 rounded-lg bg-primary text-primary-foreground shadow-md hover:shadow-primary/25 hover:scale-105 transition-all duration-200"
-                                onClick={() => console.log("Submit:", inputValue, mode)}
+                                onClick={async() => fetch('/api/generate', { method: 'POST', body: JSON.stringify({ url: inputValue }) })}
                             >
                                 <ArrowUp className="h-4 w-4" />
                             </Button>

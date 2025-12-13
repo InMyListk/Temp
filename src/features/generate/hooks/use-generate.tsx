@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 export function useGenerate() {
     const generateMutation = useMutation({
         mutationFn: async (input: { topic: string; length: number }) => {
-            const response = await fetch("/api/generate", {
+            const response = await fetch("/api/generate/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
