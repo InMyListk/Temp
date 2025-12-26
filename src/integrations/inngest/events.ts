@@ -17,6 +17,8 @@ export type Events = {
   'video/generate': {
     data: {
       url: string
+      userId: string
+      type?: 'video' | 'playlist'
     }
   }
 }

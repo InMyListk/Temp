@@ -39,11 +39,11 @@ export function RegisterForm() {
                     name: values.email,
                     email: values.email,
                     password: values.password,
-                    callbackURL: "/"
+                    callbackURL: "/dashboard"
                 },
                 {
                     onSuccess: () => {
-                        router.navigate({ to: "/" });
+                        router.navigate({ to: "/dashboard" });
                     },
                     onError: (ctx) => {
                         toast.error(ctx.error.message);

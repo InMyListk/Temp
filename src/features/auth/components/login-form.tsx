@@ -35,7 +35,7 @@ export function LoginForm() {
             callbackURL: "/",
         }, {
             onSuccess: () => {
-                router.navigate({ to: "/" })
+                router.navigate({ to: "/dashboard" })
             },
             onError: (ctx) => {
                 toast.error(ctx.error.message)

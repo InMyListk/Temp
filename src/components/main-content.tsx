@@ -4,10 +4,15 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { BookGrid } from "./book-grid"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useTRPC } from "@/integrations/trpc/react"
+import { useMutation } from "@tanstack/react-query"
 
 export function MainContent() {
     const [mode, setMode] = useState("Video")
     const [inputValue, setInputValue] = useState("")
+    
+    const trpc = useTRPC()
+    const generateBook = useMutation(trpc.users.generateBook.mutationOptions())
 
     return (
         <main className="flex-1 overflow-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
@@ -74,7 +79,14 @@ export function MainContent() {
                             <Button
                                 size="icon"
                                 className="h-7 w-7 rounded-lg bg-primary text-primary-foreground shadow-md hover:shadow-primary/25 hover:scale-105 transition-all duration-200"
-                                onClick={async() => fetch('/api/generate', { method: 'POST', body: JSON.stringify({ url: inputValue }) })}
+                                disabled={generateBook.isPending}
+                                onClick={() => {
+                                    console.log("Generating book for URL:", inputValue, "Mode:", mode)
+                                    generateBook.mutate({ 
+                                        url: inputValue,
+                                        type: mode.toLowerCase() as 'video' | 'playlist',
+                                    })
+                                }}
                             >
                                 <ArrowUp className="h-4 w-4" />
                             </Button>

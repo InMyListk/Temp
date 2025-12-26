@@ -8,6 +8,13 @@
       "when": 1764608591985,
       "tag": "0000_flimsy_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1766261710160,
+      "tag": "0001_lethal_big_bertha",
+      "breakpoints": true
     }
   ]
 }
