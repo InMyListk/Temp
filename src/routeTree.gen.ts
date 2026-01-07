@@ -15,6 +15,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as AuthSignupIndexRouteImport } from './routes/_auth/signup/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
+import { Route as DashboardBooksBookIdRouteImport } from './routes/dashboard/books/$bookId'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -47,6 +48,11 @@ const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
   path: '/login/',
   getParentRoute: () => AuthRoute,
 } as any)
+const DashboardBooksBookIdRoute = DashboardBooksBookIdRouteImport.update({
+  id: '/dashboard/books/$bookId',
+  path: '/dashboard/books/$bookId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   id: '/api/trpc/$',
   path: '/api/trpc/$',
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/dashboard/books/$bookId': typeof DashboardBooksBookIdRoute
   '/login': typeof AuthLoginIndexRoute
   '/signup': typeof AuthSignupIndexRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/dashboard/books/$bookId': typeof DashboardBooksBookIdRoute
   '/login': typeof AuthLoginIndexRoute
   '/signup': typeof AuthSignupIndexRoute
 }
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
+  '/dashboard/books/$bookId': typeof DashboardBooksBookIdRoute
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/_auth/signup/': typeof AuthSignupIndexRoute
 }
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/auth/$'
     | '/api/trpc/$'
+    | '/dashboard/books/$bookId'
     | '/login'
     | '/signup'
   fileRoutesByTo: FileRoutesByTo
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/auth/$'
     | '/api/trpc/$'
+    | '/dashboard/books/$bookId'
     | '/login'
     | '/signup'
   id:
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/api/auth/$'
     | '/api/trpc/$'
+    | '/dashboard/books/$bookId'
     | '/_auth/login/'
     | '/_auth/signup/'
   fileRoutesById: FileRoutesById
@@ -125,6 +137,7 @@ export interface RootRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
+  DashboardBooksBookIdRoute: typeof DashboardBooksBookIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/dashboard/books/$bookId': {
+      id: '/dashboard/books/$bookId'
+      path: '/dashboard/books/$bookId'
+      fullPath: '/dashboard/books/$bookId'
+      preLoaderRoute: typeof DashboardBooksBookIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/trpc/$': {
       id: '/api/trpc/$'
       path: '/api/trpc/$'
@@ -207,6 +227,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
+  DashboardBooksBookIdRoute: DashboardBooksBookIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

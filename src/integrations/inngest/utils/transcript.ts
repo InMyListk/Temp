@@ -10,6 +10,35 @@ export function extractVideoId(url: string): string | null {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
+export function extractPlaylistId(url: string): string | null {
+  const regExp = /[?&]list=([^#\&\?]+)/;
+  const match = url.match(regExp);
+  return match ? match[1] : null;
+}
+
+export async function getPlaylistVideos(playlistId: string): Promise<string[]> {
+  try {
+    const response = await fetch(`https://www.youtube.com/playlist?list=${playlistId}`);
+    const body = await response.text();
+    
+    // Regex to find video IDs in the playlist page source
+    // Looking for "videoId":"..." patterns
+    const videoIdRegex = /"videoId":"([a-zA-Z0-9_-]{11})"/g;
+    const matches = [...body.matchAll(videoIdRegex)];
+    
+    // Extract unique video IDs
+    const videoIds = new Set<string>();
+    for (const match of matches) {
+      videoIds.add(match[1]);
+    }
+    
+    return Array.from(videoIds);
+  } catch (error) {
+    console.error('Failed to fetch playlist videos:', error);
+    return [];
+  }
+}
+
 export async function getTranscript(url: string) {
   const videoId = extractVideoId(url);
   if (!videoId) {

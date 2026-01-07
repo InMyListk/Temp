@@ -6,6 +6,7 @@ import { BookGrid } from "./book-grid"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useTRPC } from "@/integrations/trpc/react"
 import { useMutation } from "@tanstack/react-query"
+import { ActivityIndicator } from "./activity-indicator"
 
 export function MainContent() {
     const [mode, setMode] = useState("Video")
@@ -21,7 +22,7 @@ export function MainContent() {
                 <div className="flex items-center justify-between px-6 py-3">
                     <SidebarTrigger />
                     <h1 className="text-xs font-bold text-primary/80 uppercase tracking-widest">BookCraft</h1>
-                    <div className="w-6" />
+                    <ActivityIndicator />
                 </div>
             </div>
 

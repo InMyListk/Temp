@@ -8,6 +8,8 @@ export const books = pgTable("books", {
   title: text("title").notNull(),
   videoUrl: text("video_url").notNull(),
   coverImage: text("cover_image"),
+  status: text("status").default('queued').notNull(),
+  failureReason: text("failure_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -22,6 +24,7 @@ export const pages = pgTable("pages", {
   content: text("content").notNull(),
   pageNumber: integer("page_number").notNull(),
   imageUrl: text("image_url"),
+  status: text("status").default('queued').notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

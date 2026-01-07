@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router"
-import { BookOpen, Home, Library } from "lucide-react"
+import { BookOpen, Home, Library, Book } from "lucide-react"
+import { useTRPC } from "@/integrations/trpc/react"
+import { useQuery } from "@tanstack/react-query"
 import {
     Sidebar,
     SidebarContent,
@@ -20,6 +22,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronRight, ChevronDown } from "lucide-react"
 
 export function AppSidebar() {
+    const trpc = useTRPC()
+    const { data: books } = useQuery(trpc.users.getLibraryBooks.queryOptions())
+
     return (
         <Sidebar>
             <SidebarHeader className="border-b border-border/50">
@@ -63,21 +68,25 @@ export function AppSidebar() {
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                     <SidebarMenuSub>
-                                        <SidebarMenuSubItem>
-                                            <SidebarMenuSubButton asChild>
-                                                <Link to="/dashboard">System Design Guide</Link>
-                                            </SidebarMenuSubButton>
-                                        </SidebarMenuSubItem>
-                                        <SidebarMenuSubItem>
-                                            <SidebarMenuSubButton asChild>
-                                                <Link to="/dashboard">Web Development 101</Link>
-                                            </SidebarMenuSubButton>
-                                        </SidebarMenuSubItem>
-                                        <SidebarMenuSubItem>
-                                            <SidebarMenuSubButton asChild>
-                                                <Link to="/dashboard">React Patterns</Link>
-                                            </SidebarMenuSubButton>
-                                        </SidebarMenuSubItem>
+                                        {books?.map((book: any) => (
+                                            <SidebarMenuSubItem key={book.id}>
+                                                <SidebarMenuSubButton asChild>
+                                                    <Link 
+                                                        to="/dashboard/books/$bookId" 
+                                                        params={{ bookId: book.id }}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <Book className="h-3.5 w-3.5 min-w-3.5 opacity-70" />
+                                                        <span className="truncate" title={book.title}>{book.title}</span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        ))}
+                                        {books?.length === 0 && (
+                                            <SidebarMenuSubItem>
+                                                <span className="px-2 py-1 text-xs text-muted-foreground">No books yet</span>
+                                            </SidebarMenuSubItem>
+                                        )}
                                     </SidebarMenuSub>
                                 </CollapsibleContent>
                             </Collapsible>

@@ -19,6 +19,7 @@ export type Events = {
       url: string
       userId: string
       type?: 'video' | 'playlist'
+      bookId: string
     }
   }
 }

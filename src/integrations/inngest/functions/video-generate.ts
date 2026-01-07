@@ -1,9 +1,11 @@
 import { inngest } from '../client'
-import { getTranscript } from '../utils/transcript';
+import { getTranscript, extractPlaylistId, getPlaylistVideos } from '../utils/transcript';
 import { generateBookContent } from '../utils/generate-book';
 import { db } from '../../../db';
 import { books, pages } from '../../../db/schema';
 import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
+import { NonRetriableError } from 'inngest';
 
 // Example: A scheduled function that runs every hour
 export const scheduledTask = inngest.createFunction(
@@ -63,76 +65,168 @@ export const onboardingWorkflow = inngest.createFunction(
 
 // Video generation workflow
 export const videoGenerateWorkflow = inngest.createFunction(
-  { id: 'video-generate' },
+  { 
+    id: 'video-generate',
+    concurrency: { limit: 1 },
+    onFailure: async ({ event, error }) => {
+        const { bookId } = event.data.event.data;
+        if (bookId) {
+            await db.update(books)
+                .set({ 
+                    status: 'failed',
+                    failureReason: error.message 
+                })
+                .where(eq(books.id, bookId));
+        }
+    }
+  },
   { event: 'video/generate' },
   async ({ event, step }) => {
-    const { url, userId } = event.data
+    const { url, userId, bookId, type } = event.data
+
+    // Step 0: Update status to processing
+    await step.run('update-status-processing', async () => {
+        if (bookId) {
+            await db.update(books)
+                .set({ status: 'processing' })
+                .where(eq(books.id, bookId));
+            return { status: 'processing' };
+        }
+        return { status: 'skipped' };
+    });
 
     // Step 1: Validate the YouTube URL
     const validatedUrl = await step.run('validate-url', async () => {
-      console.log(`Validating YouTube URL: ${url}`)
-      // Add URL validation logic here
-      const isValid = url.includes('youtube.com') || url.includes('youtu.be')
-      if (!isValid) {
-        throw new Error('Invalid YouTube URL')
-      }
-      return url
+        console.log(`Validating YouTube URL: ${url}`)
+        
+        if (type === 'playlist') {
+            const isValid = url.includes('list=');
+            if (!isValid) {
+                throw new NonRetriableError('Invalid YouTube Playlist URL');
+            }
+            return url;
+        }
+
+        const isValid = url.includes('youtube.com') || url.includes('youtu.be')
+        if (!isValid) {
+            throw new NonRetriableError('Invalid YouTube URL')
+        }
+        return url
     })
 
     // Step 2: Fetch video metadata
     const metadata = await step.run('fetch-metadata', async () => {
-      console.log(`Fetching metadata for: ${validatedUrl}`)
-      // Add logic to fetch video title, description, etc.
-      return {
-        title: 'Video Title',
-        duration: '10:00',
-        thumbnail: null // Placeholder
-      }
-    })
-
-    // Step 3: Extract transcript
-    const transcript = await step.run('extract-transcript', async () => {
-      return await getTranscript(url);
-    })
-
-    // Step 4: Generate book content
-    const bookContent = await step.run('generate-book', async () => {
-      console.log(`Generating book from transcript...`)
-      return await generateBookContent(transcript);
-    })
-
-    // Step 5: Save to database
-    const savedBook = await step.run('save-to-db', async () => {
-        if (!userId) throw new Error("User ID is required");
-        
-        const bookId = randomUUID();
-        
-        await db.insert(books).values({
-            id: bookId,
-            userId: userId,
-            title: bookContent.title,
-            videoUrl: validatedUrl,
-            coverImage: metadata.thumbnail,
-        });
-
-        const pagesToInsert = bookContent.pages.map((page, index) => ({
-            id: randomUUID(),
-            bookId: bookId,
-            title: page.title,
-            content: page.content,
-            pageNumber: index + 1,
-        }));
-
-        if (pagesToInsert.length > 0) {
-            await db.insert(pages).values(pagesToInsert);
+        if (type === 'playlist') {
+            return {
+                title: 'Playlist Book',
+                duration: '00:00',
+                thumbnail: null
+            };
         }
 
-        return { bookId };
+        console.log(`Fetching metadata for: ${validatedUrl}`)
+        return {
+            title: 'Video Title',
+            duration: '10:00',
+            thumbnail: null // Placeholder
+        }
     })
 
+    // Step 3: Update book title early
+    await step.run('update-book-title', async () => {
+            if (bookId) {
+            await db.update(books).set({
+                title: metadata.title,
+                coverImage: metadata.thumbnail,
+            }).where(eq(books.id, bookId));
+            }
+    });
+
+    let videos: { url: string }[] = [];
+
+    if (type === 'playlist') {
+            // Step 3a: Get Playlist Videos
+            const videoIds = await step.run('get-playlist-videos', async () => {
+            const playlistId = extractPlaylistId(url);
+            if (!playlistId) throw new NonRetriableError('Could not extract playlist ID');
+            return await getPlaylistVideos(playlistId);
+            });
+
+            console.log(`Found ${videoIds.length} videos in playlist`);
+            videos = videoIds.map(id => ({ url: `https://www.youtube.com/watch?v=${id}` }));
+    } else {
+        videos = [{ url: validatedUrl }];
+    }
+    
+    let pageOffset = 0;
+
+    for (let i = 0; i < videos.length; i++) {
+        const video = videos[i];
+        const videoIndex = i;
+
+        if (i > 0) {
+            await step.sleep('delay-' + i, '2s');
+        }
+
+        // Process each video in the list
+        const result = await step.run(`process-video-${videoIndex}`, async () => {
+            try {
+                console.log(`Processing video ${videoIndex + 1}/${videos.length}: ${video.url}`);
+                
+                // 1. Get Transcript
+                const transcript = await getTranscript(video.url);
+                
+                // 2. Generate Content
+                const bookContent = await generateBookContent(transcript);
+                
+                // 3. Insert Pages Incrementally
+                if (bookId && userId) {
+                        const pagesToInsert = bookContent.pages.map((page, index) => ({
+                        id: randomUUID(),
+                        bookId: bookId,
+                        title: page.title,
+                        content: page.content,
+                        pageNumber: pageOffset + index + 1, // Increment correctly across videos
+                        status: 'completed'
+                    }));
+
+                    if (pagesToInsert.length > 0) {
+                        await db.insert(pages).values(pagesToInsert);
+                    }
+                    
+                    // Update book title if it's the first video and we want to use the generated title
+                    if (videoIndex === 0) {
+                            await db.update(books).set({
+                            title: bookContent.title,
+                        }).where(eq(books.id, bookId));
+                    }
+                }
+                
+                return { 
+                    pagesGenerated: bookContent.pages.length 
+                };
+            } catch (error) {
+                throw new NonRetriableError(`Failed to process video ${videoIndex + 1}: ${(error as Error).message}`);
+            }
+        });
+        
+        pageOffset += result.pagesGenerated;
+    }
+
+    // Step 6: Update status to completed
+    await step.run('update-status-completed', async () => {
+        if (bookId) {
+            await db.update(books)
+                .set({ status: 'completed' })
+                .where(eq(books.id, bookId));
+            return { status: 'completed' };
+        }
+        return { status: 'skipped' };
+    });
+
     return {
-      success: true,
-      bookId: savedBook.bookId
+        success: true,
+        bookId: bookId
     }
   }
 )

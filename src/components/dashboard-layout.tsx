@@ -1,13 +1,12 @@
 import { AppSidebar } from "./app-sidebar"
-import { MainContent } from "./main-content"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
-export function DashboardLayout() {
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider defaultOpen={true}>
             <div className="flex h-screen w-full">
                 <AppSidebar />
-                <MainContent />
+                {children}
             </div>
         </SidebarProvider>
     )
