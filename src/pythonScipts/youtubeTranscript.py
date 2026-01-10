@@ -5,12 +5,7 @@ from youtube_transcript_api.proxies import WebshareProxyConfig
 
 def get_transcript(video_id):
     try:
-        ytt_api = YouTubeTranscriptApi(
-            proxy_config=WebshareProxyConfig(
-                proxy_username="gbwpclyv",
-                proxy_password="yb8fwnxczdk8",
-            ),
-        )
+        ytt_api = YouTubeTranscriptApi()
         transcript = ytt_api.fetch(video_id, languages=['en', 'en-US', 'ar'])
         print(json.dumps(transcript.to_raw_data()))
     except Exception as e:
