@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { useTRPC } from "@/integrations/trpc/react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useQuery } from "@tanstack/react-query"
+import { PlateEditor } from '@/components/editor/plate-editor'
 
 export const Route = createFileRoute('/dashboard/books/$bookId')({
   component: BookDetails,
@@ -23,7 +24,7 @@ function BookDetails() {
                     <div />
                 </div>
             </div>
-            <div className="p-6 max-w-4xl mx-auto">
+            {/* <div className="p-6 max-w-4xl mx-auto">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64">
                         <div className="text-muted-foreground">Loading book details...</div>
@@ -59,7 +60,12 @@ function BookDetails() {
                         Book not found.
                     </div>
                 )}
-            </div>
+            </div> */}
+            {!isLoading && book && (
+              <div>
+                <PlateEditor key={book.id} initialPages={book.pages?.map((page: any) => page.content) || []} />
+              </div>
+            )}
        </main>
     </DashboardLayout>
   )
