@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plate, usePlateEditor } from 'platejs/react';
 
+import { Spinner } from '@/components/ui/spinner';
 import { EditorKit } from '@/components/editor/plugins/editor-kit';
 import { SettingsDialog } from '@/components/editor/plugins/settings-dialog';
 import { Editor, EditorContainer } from '@/components/editor/ui/editor';
 import { MarkdownPlugin } from '@platejs/markdown';
 import { EditorHeader } from './editor-header';
+import { useEditorStore } from './store';
 
 interface SinglePageEditorProps {
   content: string;
@@ -46,44 +48,59 @@ type Prop = {
 }
 
 export function PlateEditor({ initialPages }: Prop) {
-  // Ensure we always have at least one page
-  const defaultPages = initialPages && initialPages.length > 0 ? initialPages : ['# New Page\n\n'];
-  const [pages, setPages] = useState<string[]>(defaultPages);
-  const [activePage, setActivePage] = useState(0);
+  const { 
+    pages, 
+    activePage, 
+    setPages, 
+    setActivePage, 
+    addPage, 
+    removePage, 
+    updatePage 
+  } = useEditorStore();
 
-  const handleAddPage = () => {
-    setPages([...pages, `# Page ${pages.length + 1}\n\n`]);
-    setActivePage(pages.length);
-  };
+  const [isSynced, setIsSynced] = useState(false);
 
-  const handleRemovePage = (index: number) => {
-    if (pages.length <= 1) return;
-    const newPages = pages.filter((_, i) => i !== index);
-    setPages(newPages);
-    if (activePage >= index && activePage > 0) {
-      setActivePage(activePage - 1);
+  // Initialize store with props
+  useEffect(() => {
+    if (initialPages && initialPages.length > 0) {
+      setPages(initialPages);
+    } else {
+      setPages(['# New Page\n\n']);
     }
-  };
+    setActivePage(0);
+    setIsSynced(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPages]); // Only run when initialPages changes (e.g. data loaded)
+
+  // Ensure we have valid active page
+  const safeActivePage = Math.min(activePage, pages.length - 1);
+  const safeContent = pages[safeActivePage] || '';
 
   const handleContentChange = (content: string) => {
-    const newPages = [...pages];
-    newPages[activePage] = content;
-    setPages(newPages);
+    updatePage(safeActivePage, content);
   };
+
+  if (!isSynced) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Spinner className="size-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
       <EditorHeader
         pages={pages}
-        activePage={activePage}
+        activePage={safeActivePage}
         onPageChange={setActivePage}
-        onAddPage={handleAddPage}
-        onRemovePage={handleRemovePage}
+        onAddPage={addPage}
+        onRemovePage={removePage}
       />
       <div className="flex-1 overflow-hidden p-4">
         <SinglePageEditor
-          key={activePage}
-          content={pages[activePage]}
+          key={safeActivePage}
+          content={safeContent}
           onChange={handleContentChange}
         />
       </div>

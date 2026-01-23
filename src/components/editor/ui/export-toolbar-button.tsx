@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/editor/ui/dropdown-menu';
 import { BaseEditorKit } from '@/components/editor/plugins/editor-base-kit';
+import { useEditorStore } from '../store';
 
 import { EditorStatic } from './editor-static';
 import { ToolbarButton } from './toolbar';
@@ -27,6 +28,7 @@ const siteUrl = 'https://platejs.org';
 export function ExportToolbarButton(props: DropdownMenuProps) {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
+  const { pages } = useEditorStore();
 
   const getCanvas = async () => {
     const { default: html2canvas } = await import('html2canvas-pro');
@@ -73,25 +75,77 @@ export function ExportToolbarButton(props: DropdownMenuProps) {
   };
 
   const exportToPdf = async () => {
-    const canvas = await getCanvas();
-
+    const { default: html2canvas } = await import('html2canvas-pro');
     const PDFLib = await import('pdf-lib');
     const pdfDoc = await PDFLib.PDFDocument.create();
-    const page = pdfDoc.addPage([canvas.width, canvas.height]);
-    const imageEmbed = await pdfDoc.embedPng(canvas.toDataURL('PNG'));
-    const { height, width } = imageEmbed.scale(1);
-    page.drawImage(imageEmbed, {
-      height,
-      width,
-      x: 0,
-      y: 0,
-    });
-    const pdfBase64 = await pdfDoc.saveAsBase64({ dataUri: true });
 
-    await downloadFile(pdfBase64, 'plate.pdf');
+    const editorStatic = createSlateEditor({
+        plugins: BaseEditorKit,
+    });
+    const markdownApi = editorStatic.getApi(MarkdownPlugin);
+
+    // Create a hidden container slightly larger than standard A4 width (approx 800px)
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.width = '794px'; // A4 width at 96 DPI
+    container.style.background = 'white';
+    container.style.color = 'black'; // Ensure text is visible
+    document.body.appendChild(container);
+
+    // Apply basic styles to the container to match editor appearance
+    // We assume global styles are present, but might need to enforce font
+    container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
+    try {
+        for (let i = 0; i < pages.length; i++) {
+            const pageContent = pages[i];
+            const nodes = markdownApi.markdown.deserialize(pageContent);
+            const pageEditor = createSlateEditor({
+                plugins: BaseEditorKit,
+                value: nodes,
+            });
+
+            // Serialize specific page content
+            const pageHtml = await serializeHtml(pageEditor, {
+                editorComponent: EditorStatic,
+                props: { style: { padding: '40px' } }, // Add padding for PDF page look
+            });
+
+            container.innerHTML = pageHtml;
+
+            // Wait a moment for rendering (especially useful if there were images, though they are likely base64 or urls)
+            await new Promise(r => setTimeout(r, 50));
+
+            const canvas = await html2canvas(container, {
+                scale: 2, // 2x scale for better quality
+                useCORS: true,
+                logging: false,
+                windowWidth: 794,
+            });
+
+            const page = pdfDoc.addPage([canvas.width, canvas.height]);
+            const imageEmbed = await pdfDoc.embedPng(canvas.toDataURL('PNG'));
+            
+            page.drawImage(imageEmbed, {
+                x: 0,
+                y: 0,
+                width: canvas.width,
+                height: canvas.height,
+            });
+        }
+
+        const pdfBase64 = await pdfDoc.saveAsBase64({ dataUri: true });
+        await downloadFile(pdfBase64, 'book.pdf');
+    } catch (e) {
+        console.error("PDF Export failed", e);
+    } finally {
+        document.body.removeChild(container);
+    }
   };
 
   const exportToImage = async () => {
+    // Keeps functionality to export ONLY the current active view in editor
     const canvas = await getCanvas();
     await downloadFile(canvas.toDataURL('image/png'), 'plate.png');
   };
@@ -99,13 +153,25 @@ export function ExportToolbarButton(props: DropdownMenuProps) {
   const exportToHtml = async () => {
     const editorStatic = createSlateEditor({
       plugins: BaseEditorKit,
-      value: editor.children,
     });
+    const markdownApi = editorStatic.getApi(MarkdownPlugin);
+    
+    let allPagesHtml = '';
 
-    const editorHtml = await serializeHtml(editorStatic, {
-      editorComponent: EditorStatic,
-      props: { style: { padding: '0 calc(50% - 350px)', paddingBottom: '' } },
-    });
+    for (const pageContent of pages) {
+         const nodes = markdownApi.markdown.deserialize(pageContent);
+         const pageEditor = createSlateEditor({
+            plugins: BaseEditorKit,
+            value: nodes,
+         });
+
+         const pageHtml = await serializeHtml(pageEditor, {
+            editorComponent: EditorStatic,
+            props: { style: { padding: '20px', maxWidth: '800px', margin: '0 auto' } },
+         });
+         
+         allPagesHtml += `<div style="page-break-after: always; margin-bottom: 50px; border-bottom: 1px dashed #ccc; padding-bottom: 20px;">${pageHtml}</div>`;
+    }
 
     const tailwindCss = `<link rel="stylesheet" href="${siteUrl}/tailwind.css">`;
     const katexCss = `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.18/dist/katex.css" integrity="sha384-9PvLvaiSKCPkFKB1ZsEoTjgnJn+O3KvEwtsz37/XrkYft3DTk2gHdYvd9oWgW3tV" crossorigin="anonymous">`;
@@ -129,22 +195,26 @@ export function ExportToolbarButton(props: DropdownMenuProps) {
             --font-sans: 'Inter', 'Inter Fallback';
             --font-mono: 'JetBrains Mono', 'JetBrains Mono Fallback';
           }
+          body {
+            background-color: #fff; /* Ensure white background for export */
+          }
         </style>
       </head>
       <body>
-        ${editorHtml}
+        ${allPagesHtml}
       </body>
     </html>`;
 
     const url = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
 
-    await downloadFile(url, 'plate.html');
+    await downloadFile(url, 'book.html');
   };
 
   const exportToMarkdown = async () => {
-    const md = editor.getApi(MarkdownPlugin).markdown.serialize();
+    // Join all pages
+    const md = pages.join('\n\n---\n\n');
     const url = `data:text/markdown;charset=utf-8,${encodeURIComponent(md)}`;
-    await downloadFile(url, 'plate.md');
+    await downloadFile(url, 'book.md');
   };
 
   return (
@@ -158,16 +228,16 @@ export function ExportToolbarButton(props: DropdownMenuProps) {
       <DropdownMenuContent align="start">
         <DropdownMenuGroup>
           <DropdownMenuItem onSelect={exportToHtml}>
-            Export as HTML
+            Export All as HTML
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={exportToPdf}>
-            Export as PDF
+            Export All as PDF
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={exportToImage}>
-            Export as Image
+            Export Current Page as Image
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={exportToMarkdown}>
-            Export as Markdown
+            Export All as Markdown
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>

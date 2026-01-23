@@ -32,7 +32,7 @@ export function LoginForm() {
         await authClient.signIn.email({
             email: values.email,
             password: values.password,
-            callbackURL: "/",
+            callbackURL: "/dashboard",
         }, {
             onSuccess: () => {
                 router.navigate({ to: "/dashboard" })
