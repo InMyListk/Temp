@@ -12,7 +12,7 @@ import { type UIMessage, DefaultChatTransport } from 'ai';
 import { type TNode, KEYS, nanoid, NodeApi, TextApi } from 'platejs';
 import { type PlateEditor, useEditorRef, usePluginOption } from 'platejs/react';
 
-import { aiChatPlugin } from '@/components/ai-kit';
+import { aiChatPlugin } from '@/components/editor/plugins/ai-kit';
 
 import { discussionPlugin } from './discussion-kit';
 
@@ -55,6 +55,7 @@ export const useChat = () => {
       api: options.api || '/api/ai/command',
       // Mock the API response. Remove it when you implement the route /api/ai/command
       fetch: (async (input, init) => {
+        console.log("Hello")
         const bodyOptions = editor.getOptions(aiChatPlugin).chatOptions?.body;
 
         const initBody = JSON.parse(init?.body as string);
@@ -69,9 +70,11 @@ export const useChat = () => {
           body: JSON.stringify(body),
         });
 
+        console.log('API response status:', res.status, res.ok);
+
         if (!res.ok) {
           let sample: 'comment' | 'markdown' | 'mdx' | null = null;
-
+          console.log('Falling back to fake stream');
           try {
             const content = JSON.parse(init?.body as string)
               .messages.at(-1)

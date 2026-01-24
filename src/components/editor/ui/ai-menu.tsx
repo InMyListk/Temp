@@ -61,8 +61,10 @@ import { cn } from '@/lib/utils';
 import { commentPlugin } from '@/components/editor/plugins/comment-kit';
 
 import { AIChatEditor } from './ai-chat-editor';
+import { useChat } from '../plugins/use-chat';
 
 export function AIMenu() {
+  useChat();
   const { api, editor } = useEditorPlugin(AIChatPlugin);
   const mode = usePluginOption(AIChatPlugin, 'mode');
   const toolName = usePluginOption(AIChatPlugin, 'toolName');
@@ -400,6 +402,8 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: 'Improve writing',
     value: 'improveWriting',
     onSelect: ({ editor, input }) => {
+      const selectedText = editor.api.string(editor.selection);
+      console.log(input)
       void editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: 'Improve the writing',
         toolName: 'edit',

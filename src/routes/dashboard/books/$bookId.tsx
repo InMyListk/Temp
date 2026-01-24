@@ -17,7 +17,7 @@ function BookDetails() {
   return (
     <DashboardLayout>
        <main className="flex-1 overflow-auto bg-background">
-            <div className="sticky top-0 z-40 bg-background/50 backdrop-blur-xl border-b border-border/40">
+            <div className="sticky z-[999] top-0 bg-background/50 backdrop-blur-xl border-b border-border/40">
                 <div className="flex items-center justify-between px-6 py-3">
                     <SidebarTrigger />
                     <h1 className="text-sm font-medium">{book?.title || 'Loading...'}</h1>

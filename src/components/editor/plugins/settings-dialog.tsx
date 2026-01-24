@@ -73,6 +73,7 @@ export const models: Model[] = [
   { label: 'Gemini 2.0 Flash', value: 'google/gemini-2.0-flash' },
   { label: 'Gemini 2.0 Flash Lite', value: 'google/gemini-2.0-flash-lite' },
   { label: 'Gemini 2.5 Flash', value: 'google/gemini-2.5-flash' },
+  { label: 'Gemini 2.5 Flash', value: 'google/gemini-3-flash-preview' },
   {
     label: 'Gemini 2.5 Flash Image Preview',
     value: 'google/gemini-2.5-flash-image-preview',
