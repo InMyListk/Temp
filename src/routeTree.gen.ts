@@ -12,12 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as ApiUploadthingRouteImport } from './routes/api/uploadthing'
 import { Route as ApiInngestRouteImport } from './routes/api/inngest'
 import { Route as AuthSignupIndexRouteImport } from './routes/_auth/signup/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
 import { Route as DashboardBooksBookIdRouteImport } from './routes/dashboard/books/$bookId'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api.trpc.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiAiCopilotRouteImport } from './routes/api/ai/copilot'
+import { Route as ApiAiCommandRouteImport } from './routes/api/ai/command'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -31,6 +34,11 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/dashboard/',
   path: '/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUploadthingRoute = ApiUploadthingRouteImport.update({
+  id: '/api/uploadthing',
+  path: '/api/uploadthing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiInngestRoute = ApiInngestRouteImport.update({
@@ -63,11 +71,24 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiCopilotRoute = ApiAiCopilotRouteImport.update({
+  id: '/api/ai/copilot',
+  path: '/api/ai/copilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiCommandRoute = ApiAiCommandRouteImport.update({
+  id: '/api/ai/command',
+  path: '/api/ai/command',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/api/ai/command': typeof ApiAiCommandRoute
+  '/api/ai/copilot': typeof ApiAiCopilotRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/dashboard/books/$bookId': typeof DashboardBooksBookIdRoute
@@ -77,7 +98,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/inngest': typeof ApiInngestRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/api/ai/command': typeof ApiAiCommandRoute
+  '/api/ai/copilot': typeof ApiAiCopilotRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/dashboard/books/$bookId': typeof DashboardBooksBookIdRoute
@@ -89,7 +113,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
   '/api/inngest': typeof ApiInngestRoute
+  '/api/uploadthing': typeof ApiUploadthingRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/ai/command': typeof ApiAiCommandRoute
+  '/api/ai/copilot': typeof ApiAiCopilotRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/dashboard/books/$bookId': typeof DashboardBooksBookIdRoute
@@ -101,7 +128,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/api/inngest'
+    | '/api/uploadthing'
     | '/dashboard'
+    | '/api/ai/command'
+    | '/api/ai/copilot'
     | '/api/auth/$'
     | '/api/trpc/$'
     | '/dashboard/books/$bookId'
@@ -111,7 +141,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/api/inngest'
+    | '/api/uploadthing'
     | '/dashboard'
+    | '/api/ai/command'
+    | '/api/ai/copilot'
     | '/api/auth/$'
     | '/api/trpc/$'
     | '/dashboard/books/$bookId'
@@ -122,7 +155,10 @@ export interface FileRouteTypes {
     | '/'
     | '/_auth'
     | '/api/inngest'
+    | '/api/uploadthing'
     | '/dashboard/'
+    | '/api/ai/command'
+    | '/api/ai/copilot'
     | '/api/auth/$'
     | '/api/trpc/$'
     | '/dashboard/books/$bookId'
@@ -134,7 +170,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
   ApiInngestRoute: typeof ApiInngestRoute
+  ApiUploadthingRoute: typeof ApiUploadthingRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  ApiAiCommandRoute: typeof ApiAiCommandRoute
+  ApiAiCopilotRoute: typeof ApiAiCopilotRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
   DashboardBooksBookIdRoute: typeof DashboardBooksBookIdRoute
@@ -161,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/uploadthing': {
+      id: '/api/uploadthing'
+      path: '/api/uploadthing'
+      fullPath: '/api/uploadthing'
+      preLoaderRoute: typeof ApiUploadthingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/inngest': {
@@ -205,6 +251,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai/copilot': {
+      id: '/api/ai/copilot'
+      path: '/api/ai/copilot'
+      fullPath: '/api/ai/copilot'
+      preLoaderRoute: typeof ApiAiCopilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/command': {
+      id: '/api/ai/command'
+      path: '/api/ai/command'
+      fullPath: '/api/ai/command'
+      preLoaderRoute: typeof ApiAiCommandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -224,7 +284,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   ApiInngestRoute: ApiInngestRoute,
+  ApiUploadthingRoute: ApiUploadthingRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  ApiAiCommandRoute: ApiAiCommandRoute,
+  ApiAiCopilotRoute: ApiAiCopilotRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
   DashboardBooksBookIdRoute: DashboardBooksBookIdRoute,
