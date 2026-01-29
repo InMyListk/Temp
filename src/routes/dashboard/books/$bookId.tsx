@@ -63,7 +63,11 @@ function BookDetails() {
             </div> */}
             {!isLoading && book && (
               <div>
-                <PlateEditor key={book.id} initialPages={book.pages?.map((page: any) => page.content) || []} />
+                <PlateEditor 
+                  key={book.id} 
+                  bookId={book.id}
+                  initialPages={book.pages?.map((page: any) => page.content) || []} 
+                />
               </div>
             )}
        </main>

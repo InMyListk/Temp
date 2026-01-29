@@ -1,3 +1,4 @@
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createFileRoute } from '@tanstack/react-router'
 import { generateText } from 'ai'
 
@@ -11,9 +12,8 @@ export const Route = createFileRoute('/api/ai/copilot')({
           prompt,
           system,
         } = await request.json()
-
-        const apiKey = key || process.env.AI_GATEWAY_API_KEY
-
+        const apiKey = key || process.env.GEMINI_API_KEY
+        console.log(apiKey)
         if (!apiKey) {
           return new Response(
             JSON.stringify({ error: 'Missing ai gateway API key.' }),
@@ -23,22 +23,27 @@ export const Route = createFileRoute('/api/ai/copilot')({
             }
           )
         }
-
+        const AiProvider = createGoogleGenerativeAI({
+          apiKey,
+        });
         try {
           const result = await generateText({
-            abortSignal: request.signal,
+            
             maxOutputTokens: 50,
-            model: `openai/${model}`,
+            model: AiProvider(model),
             prompt,
             system,
             temperature: 0.7,
           })
-
-          return new Response(JSON.stringify(result), {
+          
+          console.log(result.text)
+          
+          return new Response(JSON.stringify({ text: result.text }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           })
         } catch (error) {
+          
           if (error instanceof Error && error.name === 'AbortError') {
             return new Response(null, { status: 408 })
           }

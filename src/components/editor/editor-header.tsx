@@ -1,4 +1,4 @@
-import { Plus, FileText, MoreVertical, Trash2 } from 'lucide-react';
+import { Plus, FileText, MoreVertical, Trash2, Save, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ interface EditorHeaderProps {
   onPageChange: (index: number) => void;
   onAddPage: () => void;
   onRemovePage: (index: number) => void;
+  onSave?: () => void;
+  isSaving?: boolean;
 }
 
 export function EditorHeader({
@@ -23,6 +25,8 @@ export function EditorHeader({
   onPageChange,
   onAddPage,
   onRemovePage,
+  onSave,
+  isSaving,
 }: EditorHeaderProps) {
   const isMobile = useIsMobile();
 
@@ -81,7 +85,26 @@ export function EditorHeader({
         ))}
       </div>
 
-      <div className="flex items-center pl-2 border-l bg-background z-10">
+      <div className="flex items-center pl-2 border-l bg-background z-10 gap-2">
+        {onSave && (
+          <Button
+            variant="default"
+            size={isMobile ? "icon" : "sm"}
+            onClick={onSave}
+            disabled={isSaving}
+            className={cn(
+              "shrink-0 transition-all",
+              !isMobile && "gap-2"
+            )}
+          >
+            {isSaving ? (
+              <Cloud className="h-4 w-4 animate-pulse" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {!isMobile && (isSaving ? 'Saving...' : 'Save')}
+          </Button>
+        )}
         <Button
           onClick={onAddPage}
           variant="outline"

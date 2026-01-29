@@ -242,7 +242,6 @@ export const Route = createFileRoute('/api/ai/command')({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        console.log("Aaa")
         return handleAICommand(request);
       },
     },

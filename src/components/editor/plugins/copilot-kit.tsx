@@ -29,7 +29,8 @@ export const CopilotKit = [
   - CRITICAL: Avoid starting a new block. Do not use block formatting like >, #, 1., 2., -, etc. The suggestion should continue in the same block as the context.
   - If no context is provided or you can't generate a continuation, return "0" without explanation.`,
         },
-        onError: () => {
+        onError: (err) => {
+          console.log(err)
           // Mock the API response. Remove it when you implement the route /api/ai/copilot
           api.copilot.setBlockSuggestion({
             text: stripMarkdown(faker.lorem.sentence()),
@@ -37,7 +38,7 @@ export const CopilotKit = [
         },
         onFinish: (_, completion) => {
           if (completion === '0') return;
-
+          
           api.copilot.setBlockSuggestion({
             text: stripMarkdown(completion),
           });

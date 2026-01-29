@@ -85,6 +85,68 @@ const todosRouter = createTRPCRouter({
         throw new Error('Failed to start generation')
       }
     }),
+
+  updateBookPages: protectedProcedure
+    .input(z.object({
+      bookId: z.string(),
+      pages: z.array(z.string())
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { bookId, pages: newPages } = input;
+
+      // Verify ownership
+      const book = await db.query.books.findFirst({
+        where: and(eq(books.id, bookId), eq(books.userId, ctx.auth.user.id)),
+      });
+
+      if (!book) {
+        throw new Error('Book not found or unauthorized');
+      }
+
+      // get existing pages
+      const existingPages = await db.query.pages.findMany({
+        where: eq(pages.bookId, bookId),
+        orderBy: [asc(pages.pageNumber)],
+      });
+
+      // Sync pages
+      for (let i = 0; i < newPages.length; i++) {
+        const content = newPages[i];
+        const title = content.split('\n')[0].replace(/^#+\s*/, '').substring(0, 100) || `Page ${i + 1}`;
+        
+        if (i < existingPages.length) {
+          // Update existing
+          await db.update(pages)
+            .set({ 
+              content, 
+              title,
+              pageNumber: i,
+              updatedAt: new Date()
+            })
+            .where(eq(pages.id, existingPages[i].id));
+        } else {
+          // Create new
+          await db.insert(pages).values({
+            id: randomUUID(),
+            bookId,
+            content,
+            title,
+            pageNumber: i,
+            status: 'completed', 
+          });
+        }
+      }
+
+      // Delete excess
+      if (existingPages.length > newPages.length) {
+        const pagesToDelete = existingPages.slice(newPages.length);
+        for (const page of pagesToDelete) {
+           await db.delete(pages).where(eq(pages.id, page.id));
+        }
+      }
+
+      return { success: true };
+    }),
 })
 
 export const trpcRouter = createTRPCRouter({
