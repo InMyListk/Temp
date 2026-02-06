@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { BookOpen, Home, Library, Book } from "lucide-react"
+import { BookOpen, Home, Library, Book, Loader } from "lucide-react"
 import { useTRPC } from "@/integrations/trpc/react"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -17,13 +17,16 @@ import {
     SidebarGroupLabel,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ChevronRight, ChevronDown } from "lucide-react"
+import { authClient } from "@/lib/auth-client"
 
 export function AppSidebar() {
     const trpc = useTRPC()
-    const { data: books } = useQuery(trpc.users.getLibraryBooks.queryOptions())
+    const auth = authClient.useSession().data;
+    const { data: books, isLoading } = useQuery(trpc.users.getLibraryBooks.queryOptions())
 
     return (
         <Sidebar>
@@ -67,12 +70,12 @@ export function AppSidebar() {
                                     </SidebarMenuButton>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
-                                    <SidebarMenuSub>
-                                        {books?.map((book: any) => (
+                                    <SidebarMenuSub className="">
+                                        {!isLoading ? books?.map((book: any) => (
                                             <SidebarMenuSubItem key={book.id}>
                                                 <SidebarMenuSubButton asChild>
-                                                    <Link 
-                                                        to="/dashboard/books/$bookId" 
+                                                    <Link
+                                                        to="/dashboard/books/$bookId"
                                                         params={{ bookId: book.id }}
                                                         className="flex items-center gap-2"
                                                     >
@@ -81,7 +84,13 @@ export function AppSidebar() {
                                                     </Link>
                                                 </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>
-                                        ))}
+                                        )) : <div className="flex w-full max-w-sm flex-col gap-2">
+                                            {Array.from({ length: 5 }).map((_, index) => (
+                                                <div className="flex gap-4" key={index}>
+                                                    <Skeleton className="h-5 flex-1" />
+                                                </div>
+                                            ))}
+                                        </div>}
                                         {books?.length === 0 && (
                                             <SidebarMenuSubItem>
                                                 <span className="px-2 py-1 text-xs text-muted-foreground">No books yet</span>
@@ -102,7 +111,7 @@ export function AppSidebar() {
                             <AvatarFallback>JD</AvatarFallback>
                         </Avatar>
                         <div className="text-sm">
-                            <p className="font-medium">John Doe</p>
+                            <p className="font-medium">{auth?.user.name}</p>
                             <p className="text-xs text-muted-foreground">Free Plan</p>
                         </div>
                     </div>

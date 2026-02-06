@@ -4,27 +4,31 @@ import { useTRPC } from "@/integrations/trpc/react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useQuery } from "@tanstack/react-query"
 import { PlateEditor } from '@/components/editor/plate-editor'
+import { requireAuth } from '@/lib/auth-utils'
 
 export const Route = createFileRoute('/dashboard/books/$bookId')({
-  component: BookDetails,
+    component: BookDetails,
+    beforeLoad: async () => {
+        await requireAuth();
+    }
 })
 
 function BookDetails() {
-  const { bookId } = Route.useParams()
-  const trpc = useTRPC()
-  const { data: book, isLoading } = useQuery(trpc.users.getBookDetails.queryOptions({ bookId }))
+    const { bookId } = Route.useParams()
+    const trpc = useTRPC()
+    const { data: book, isLoading } = useQuery(trpc.users.getBookDetails.queryOptions({ bookId }))
 
-  return (
-    <DashboardLayout>
-       <main className="flex-1 overflow-auto bg-background">
-            <div className="sticky z-[999] top-0 bg-background/50 backdrop-blur-xl border-b border-border/40">
-                <div className="flex items-center justify-between px-6 py-3">
-                    <SidebarTrigger />
-                    <h1 className="text-sm font-medium">{book?.title || 'Loading...'}</h1>
-                    <div />
+    return (
+        <DashboardLayout>
+            <main className="flex-1 overflow-auto bg-background">
+                <div className="sticky z-[999] top-0 bg-background/50 backdrop-blur-xl border-b border-border/40">
+                    <div className="flex items-center justify-between px-6 py-3">
+                        <SidebarTrigger />
+                        <h1 className="text-sm font-medium">{book?.title || 'Loading...'}</h1>
+                        <div />
+                    </div>
                 </div>
-            </div>
-            {/* <div className="p-6 max-w-4xl mx-auto">
+                {/* <div className="p-6 max-w-4xl mx-auto">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-64">
                         <div className="text-muted-foreground">Loading book details...</div>
@@ -61,16 +65,16 @@ function BookDetails() {
                     </div>
                 )}
             </div> */}
-            {!isLoading && book && (
-              <div>
-                <PlateEditor 
-                  key={book.id} 
-                  bookId={book.id}
-                  initialPages={book.pages?.map((page: any) => page.content) || []} 
-                />
-              </div>
-            )}
-       </main>
-    </DashboardLayout>
-  )
+                {!isLoading && book && (
+                    <div>
+                        <PlateEditor
+                            key={book.id}
+                            bookId={book.id}
+                            initialPages={book.pages?.map((page: any) => page.content) || []}
+                        />
+                    </div>
+                )}
+            </main>
+        </DashboardLayout>
+    )
 }

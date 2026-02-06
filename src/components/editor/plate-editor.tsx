@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { debounce } from 'lodash';
 import { Plate, usePlateEditor } from 'platejs/react';
 import { useMutation } from '@tanstack/react-query';
 
@@ -17,9 +18,16 @@ import { toast } from 'sonner';
 interface SinglePageEditorProps {
   content: string;
   onChange: (content: string) => void;
+  onSave: () => void
 }
 
-function SinglePageEditor({ content, onChange }: SinglePageEditorProps) {
+function SinglePageEditor({ content, onChange, onSave }: SinglePageEditorProps) {
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+
   const editor = usePlateEditor({
     plugins: EditorKit,
     value: (editor) => {
@@ -29,12 +37,26 @@ function SinglePageEditor({ content, onChange }: SinglePageEditorProps) {
     },
   });
 
+  const debouncedOnChange = useMemo(() => {
+    return debounce((value: any) => {
+      const markdown = editor.getApi(MarkdownPlugin).markdown.serialize({ value });
+      onChangeRef.current(markdown);
+      // onSaveRef.current()
+    }, 1000);
+  }, [editor]);
+
+  // Flush pending updates on unmount
+  useEffect(() => {
+    return () => {
+      debouncedOnChange.flush();
+    };
+  }, [debouncedOnChange]);
+
   return (
     <Plate
       editor={editor}
       onChange={({ value }) => {
-        const markdown = editor.getApi(MarkdownPlugin).markdown.serialize({ value });
-        onChange(markdown);
+        debouncedOnChange(value);
       }}
     >
       <EditorContainer>
@@ -52,16 +74,16 @@ type Prop = {
 }
 
 export function PlateEditor({ initialPages, bookId }: Prop) {
-  const { 
-    pages, 
-    activePage, 
+  const {
+    pages,
+    activePage,
     bookId: storedBookId,
-    setPages, 
-    setActivePage, 
+    setPages,
+    setActivePage,
     setBookId,
-    addPage, 
-    removePage, 
-    updatePage 
+    addPage,
+    removePage,
+    updatePage
   } = useEditorStore();
 
   const trpc = useTRPC();
@@ -82,7 +104,7 @@ export function PlateEditor({ initialPages, bookId }: Prop) {
       setActivePage(0);
       setBookId(bookId);
     }
-    
+
     setIsSynced(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId]); // Depend primarily on bookId to switch contexts
@@ -91,9 +113,25 @@ export function PlateEditor({ initialPages, bookId }: Prop) {
   const safeActivePage = Math.min(activePage, pages.length - 1);
   const safeContent = pages[safeActivePage] || '';
 
-  const handleContentChange = (content: string) => {
-    updatePage(safeActivePage, content);
-  };
+  // const handleContentChange = useMemo() => {
+  //   ()=>{
+  //       debounce(updatePage(safeActivePage, content), 1000)
+  //   },[]
+  // };
+
+  // const handleContentChange = useMemo(
+  //   () =>
+  //     debounce((content: string) => {
+  //       updatePage(safeActivePage, content);
+  //     }, 1000),
+  //   [safeActivePage, updatePage]
+  // );
+
+  // useEffect(() => {
+  //   return () => {
+  //     handleContentChange.cancel();
+  //   };
+  // }, [handleContentChange]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -102,7 +140,7 @@ export function PlateEditor({ initialPages, bookId }: Prop) {
         bookId,
         pages
       });
-      
+
       toast.success("Changes saved to cloud successfully");
     } catch (error) {
       toast.error("Failed to save changes");
@@ -135,7 +173,11 @@ export function PlateEditor({ initialPages, bookId }: Prop) {
         <SinglePageEditor
           key={safeActivePage}
           content={safeContent}
-          onChange={handleContentChange}
+          onChange={(content) => {
+            updatePage(safeActivePage, content);      // instant local update
+            // handleContentChange(content);             // debounced side-effect
+          }}
+          onSave={handleSave}
         />
       </div>
     </div>
