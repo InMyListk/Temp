@@ -76,7 +76,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                         <TabsTrigger value="billing">Billing</TabsTrigger>
                         <TabsTrigger value="appearance">Theme</TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="profile" className="mt-4 space-y-4">
                         <form onSubmit={handleProfileSubmit} className="space-y-4">
                             <div className="space-y-2">
@@ -105,7 +105,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                             </Button>
                         </form>
                     </TabsContent>
-                    
+
                     <TabsContent value="billing" className="mt-4 space-y-4">
                         <div className="rounded-md border p-4">
                             <div className="flex flex-col gap-1 pb-4 mb-4 border-b">
@@ -126,8 +126,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                                         Manage Subscription
                                     </Button>
                                 ) : (
-                                    <Button 
-                                        onClick={async () => await authClient.checkout({ slug: "pro" })} 
+                                    <Button
+                                        onClick={async () => await authClient.checkout({ slug: "pro" })}
                                         disabled={isLoading}
                                     >
                                         Upgrade to Pro

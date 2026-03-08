@@ -72,7 +72,7 @@ export const videoGenerateWorkflow = inngest.createFunction(
             console.log(`Fetching metadata for: ${validatedUrl}`)
             const videoId = extractVideoId(validatedUrl);
             const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
-            
+
             return {
                 title: 'Video Title',
                 duration: '10:00',
@@ -101,7 +101,7 @@ export const videoGenerateWorkflow = inngest.createFunction(
             });
 
             console.log(`Found ${videoIds.length} videos in playlist`);
-            
+
             // Set the playlist thumbnail using the first video
             if (videoIds.length > 0 && bookId) {
                 await step.run('update-playlist-thumbnail', async () => {
