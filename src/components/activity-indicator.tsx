@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Activity, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useTRPC } from "@/integrations/trpc/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Popover,
   PopoverContent,
@@ -21,12 +21,43 @@ export function ActivityIndicator() {
   const [open, setOpen] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const prevActiveBooksRef = useRef<Set<string>>(new Set());
 
   // Poll for active books every 2 seconds
   const { data: activeBooks, isLoading } = useQuery({
     ...trpc.users.getActiveBooks.queryOptions(),
     refetchInterval: 2000,
   });
+
+  useEffect(() => {
+    if (!activeBooks) return;
+
+    const currentIds = new Set(activeBooks.map(book => book.id));
+    const prevIds = prevActiveBooksRef.current;
+
+    // Check for new jobs to auto-open the popover
+    const hasNewJobs = activeBooks.some(book => !prevIds.has(book.id));
+    if (hasNewJobs && prevIds.size >= 0) {
+      setOpen(true);
+    }
+
+    // Check for completed/failed jobs to invalidate caches
+    const hasCompletedJobs = Array.from(prevIds).some(id => !currentIds.has(id));
+    if (hasCompletedJobs) {
+      queryClient.invalidateQueries(trpc.users.getLibraryBooks.queryFilter());
+    }
+
+    // Initialize state if empty, otherwise update ref
+    if (prevIds.size === 0 && currentIds.size > 0 && !hasNewJobs) {
+      // Just initial load, do nothing special
+    } else if (hasNewJobs && prevIds.size === 0) {
+      // Very first load with new item (after user clicked generate recently)
+      // Optionally open popover here as well, but it might just be a page reload while active.
+    }
+    prevActiveBooksRef.current = currentIds;
+
+  }, [activeBooks, queryClient, trpc]);
 
   const hasActiveJobs = activeBooks && activeBooks.length > 0;
 
@@ -41,7 +72,7 @@ export function ActivityIndicator() {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-0" align="end">
+        <PopoverContent className="w-80 p-0" align="end" >
           <div className="p-4 font-medium border-b">Activity</div>
           <ScrollArea className="h-[300px]">
             {isLoading ? (
@@ -83,7 +114,7 @@ export function ActivityIndicator() {
 
       <Dialog open={!!selectedBookId} onOpenChange={(open) => !open && setSelectedBookId(null)}>
         <DialogContent className="sm:max-w-[600px]">
-            {selectedBookId && <BookStatusDetails bookId={selectedBookId} />}
+          {selectedBookId && <BookStatusDetails bookId={selectedBookId} />}
         </DialogContent>
       </Dialog>
     </>
@@ -110,45 +141,45 @@ function BookStatusDetails({ bookId }: { bookId: string }) {
           <span className="line-clamp-1">{book.title}</span>
         </DialogTitle>
       </DialogHeader>
-      
+
       <div className="mt-4">
         <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-            <span>Status: <span className="font-medium text-foreground capitalize">{book.status}</span></span>
-            {book.failureReason && <span className="text-destructive">Error: {book.failureReason}</span>}
+          <span>Status: <span className="font-medium text-foreground capitalize">{book.status}</span></span>
+          {book.failureReason && <span className="text-destructive">Error: {book.failureReason}</span>}
         </div>
 
         <div className="border rounded-md">
-            <div className="bg-muted/50 p-3 text-sm font-medium border-b">
-                Generated Content
-            </div>
-            <ScrollArea className="h-[300px]">
-                <div className="divide-y">
-                    {book.pages?.map((page) => (
-                        <div key={page.id} className="p-3 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                                    {page.pageNumber}
-                                </span>
-                                <span className="text-sm font-medium">{page.title}</span>
-                            </div>
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        </div>
-                    ))}
-                    
-                    {book.status === 'processing' && (
-                        <div className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span className="text-sm">Generating next chapter...</span>
-                        </div>
-                    )}
-                    
-                    {(!book.pages || book.pages.length === 0) && book.status === 'processing' && (
-                         <div className="p-4 text-center text-sm text-muted-foreground">
-                            Initializing generation...
-                        </div>
-                    )}
+          <div className="bg-muted/50 p-3 text-sm font-medium border-b">
+            Generated Content
+          </div>
+          <ScrollArea className="h-[300px]">
+            <div className="divide-y">
+              {book.pages?.map((page) => (
+                <div key={page.id} className="p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {page.pageNumber}
+                    </span>
+                    <span className="text-sm font-medium">{page.title}</span>
+                  </div>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                 </div>
-            </ScrollArea>
+              ))}
+
+              {book.status === 'processing' && (
+                <div className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Generating next chapter...</span>
+                </div>
+              )}
+
+              {(!book.pages || book.pages.length === 0) && book.status === 'processing' && (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  Initializing generation...
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </>

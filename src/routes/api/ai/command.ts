@@ -40,14 +40,14 @@ const inputSchema = z.object({
 
 async function handleAICommand(request: Request) {
   // Dynamic imports to avoid bundler issues with SSR
-  const [{ createSlateEditor, nanoid }, { BaseEditorKit }] = await Promise.all([
+  const [{ createSlateEditor }, { BaseEditorKit }] = await Promise.all([
     import('platejs'),
     import('@/components/editor/plugins/editor-base-kit'),
   ]);
 
   const data = await request.json();
   const validatedData = inputSchema.parse(data);
-    console.log("here command.ts")
+  console.log("here command.ts")
   const {
     apiKey: key,
     ctx,

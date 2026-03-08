@@ -80,7 +80,7 @@ export function ExportToolbarButton(props: DropdownMenuProps) {
     const pdfDoc = await PDFLib.PDFDocument.create();
 
     const editorStatic = createSlateEditor({
-        plugins: BaseEditorKit,
+      plugins: BaseEditorKit,
     });
     const markdownApi = editorStatic.getApi(MarkdownPlugin);
 
@@ -98,49 +98,49 @@ export function ExportToolbarButton(props: DropdownMenuProps) {
     container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
     try {
-        for (let i = 0; i < pages.length; i++) {
-            const pageContent = pages[i];
-            const nodes = markdownApi.markdown.deserialize(pageContent);
-            const pageEditor = createSlateEditor({
-                plugins: BaseEditorKit,
-                value: nodes,
-            });
+      for (let i = 0; i < pages.length; i++) {
+        const pageContent = pages[i];
+        const nodes = markdownApi.markdown.deserialize(pageContent);
+        const pageEditor = createSlateEditor({
+          plugins: BaseEditorKit,
+          value: nodes,
+        });
 
-            // Serialize specific page content
-            const pageHtml = await serializeHtml(pageEditor, {
-                editorComponent: EditorStatic,
-                props: { style: { padding: '40px' } }, // Add padding for PDF page look
-            });
+        // Serialize specific page content
+        const pageHtml = await serializeHtml(pageEditor, {
+          editorComponent: EditorStatic,
+          props: { style: { padding: '40px' } }, // Add padding for PDF page look
+        });
 
-            container.innerHTML = pageHtml;
+        container.innerHTML = pageHtml;
 
-            // Wait a moment for rendering (especially useful if there were images, though they are likely base64 or urls)
-            await new Promise(r => setTimeout(r, 50));
+        // Wait a moment for rendering (especially useful if there were images, though they are likely base64 or urls)
+        await new Promise(r => setTimeout(r, 50));
 
-            const canvas = await html2canvas(container, {
-                scale: 2, // 2x scale for better quality
-                useCORS: true,
-                logging: false,
-                windowWidth: 794,
-            });
+        const canvas = await html2canvas(container, {
+          scale: 2, // 2x scale for better quality
+          useCORS: true,
+          logging: false,
+          windowWidth: 794,
+        });
 
-            const page = pdfDoc.addPage([canvas.width, canvas.height]);
-            const imageEmbed = await pdfDoc.embedPng(canvas.toDataURL('PNG'));
-            
-            page.drawImage(imageEmbed, {
-                x: 0,
-                y: 0,
-                width: canvas.width,
-                height: canvas.height,
-            });
-        }
+        const page = pdfDoc.addPage([canvas.width, canvas.height]);
+        const imageEmbed = await pdfDoc.embedPng(canvas.toDataURL('PNG'));
 
-        const pdfBase64 = await pdfDoc.saveAsBase64({ dataUri: true });
-        await downloadFile(pdfBase64, 'book.pdf');
+        page.drawImage(imageEmbed, {
+          x: 0,
+          y: 0,
+          width: canvas.width,
+          height: canvas.height,
+        });
+      }
+
+      const pdfBase64 = await pdfDoc.saveAsBase64({ dataUri: true });
+      await downloadFile(pdfBase64, 'book.pdf');
     } catch (e) {
-        console.error("PDF Export failed", e);
+      console.error("PDF Export failed", e);
     } finally {
-        document.body.removeChild(container);
+      document.body.removeChild(container);
     }
   };
 
@@ -155,22 +155,22 @@ export function ExportToolbarButton(props: DropdownMenuProps) {
       plugins: BaseEditorKit,
     });
     const markdownApi = editorStatic.getApi(MarkdownPlugin);
-    
+
     let allPagesHtml = '';
 
     for (const pageContent of pages) {
-         const nodes = markdownApi.markdown.deserialize(pageContent);
-         const pageEditor = createSlateEditor({
-            plugins: BaseEditorKit,
-            value: nodes,
-         });
+      const nodes = markdownApi.markdown.deserialize(pageContent);
+      const pageEditor = createSlateEditor({
+        plugins: BaseEditorKit,
+        value: nodes,
+      });
 
-         const pageHtml = await serializeHtml(pageEditor, {
-            editorComponent: EditorStatic,
-            props: { style: { padding: '20px', maxWidth: '800px', margin: '0 auto' } },
-         });
-         
-         allPagesHtml += `<div style="page-break-after: always; margin-bottom: 50px; border-bottom: 1px dashed #ccc; padding-bottom: 20px;">${pageHtml}</div>`;
+      const pageHtml = await serializeHtml(pageEditor, {
+        editorComponent: EditorStatic,
+        props: { style: { padding: '20px', maxWidth: '800px', margin: '0 auto' } },
+      });
+
+      allPagesHtml += `<div style="page-break-after: always; margin-bottom: 50px; border-bottom: 1px dashed #ccc; padding-bottom: 20px;">${pageHtml}</div>`;
     }
 
     const tailwindCss = `<link rel="stylesheet" href="${siteUrl}/tailwind.css">`;
