@@ -2,9 +2,12 @@ import { createFileRoute } from '@tanstack/react-router'
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useTRPC } from "@/integrations/trpc/react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { PlateEditor } from '@/components/editor/plate-editor'
 import { requireAuth } from '@/lib/auth-utils'
+import { PencilIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/dashboard/books/$bookId')({
     component: BookDetails,
@@ -13,10 +16,32 @@ export const Route = createFileRoute('/dashboard/books/$bookId')({
     }
 })
 
+function BookTitleEditor({ book, updateBookInfo, isPending }: { book: any, updateBookInfo: any, isPending: boolean }) {
+    const [bookTitle, setBookTitle] = useState('');
+    return (
+        <div className='flex items-center gap-2 hover:bg-gray-100 py-1 px-3 rounded cursor-text'>
+            <input
+                type="text"
+                value={bookTitle || book.title}
+                onChange={(e) => setBookTitle(e.target.value)}
+                className='field-sizing-content border-0 outline-0 bg-transparent'
+            />
+            {bookTitle && bookTitle !== book.title && (
+                <Button variant={"ghost"} onClick={() => {
+                    updateBookInfo({ bookId: book.id, context: { title: bookTitle } })
+                }} disabled={isPending}>
+                    {isPending ? 'Saving...' : 'SAVE'}
+                </Button>
+            )}
+        </div>
+    )
+}
+
 function BookDetails() {
     const { bookId } = Route.useParams()
     const trpc = useTRPC()
     const { data: book, isLoading } = useQuery(trpc.users.getBookDetails.queryOptions({ bookId }))
+    const { mutateAsync: updateBookInfo, isPending } = useMutation(trpc.users.updateBookInfo.mutationOptions());
 
     return (
         <DashboardLayout>
@@ -24,7 +49,13 @@ function BookDetails() {
                 <div className="sticky z-[999] top-0 bg-background/50 backdrop-blur-xl border-b border-border/40">
                     <div className="flex items-center justify-between px-6 py-3">
                         <SidebarTrigger />
-                        <h1 className="text-sm font-medium">{book?.title || 'Loading...'}</h1>
+                        {book ? (
+                            <BookTitleEditor book={book} updateBookInfo={updateBookInfo} isPending={isPending} />
+                        ) : (
+                            <div className='flex items-center gap-2 hover:bg-gray-100 py-1 px-3 rounded cursor-text'>
+                                <h1 className="text-sm font-medium">Loading...</h1>
+                            </div>
+                        )}
                         <div />
                     </div>
                 </div>

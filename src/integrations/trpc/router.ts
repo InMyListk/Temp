@@ -6,6 +6,7 @@ import { inngest } from '../inngest'
 import { books, pages } from '@/db/schema'
 import { eq, not, and, desc, asc } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
+import { title } from 'process'
 
 const todosRouter = createTRPCRouter({
   getUsers: protectedProcedure.query(({ ctx }) => {
@@ -95,7 +96,27 @@ const todosRouter = createTRPCRouter({
         throw new Error('Failed to start generation')
       }
     }),
+  updateBookInfo: protectedProcedure.input(z.object({
+    bookId: z.string(),
+    context: z.object({
+      title: z.string().optional(),
+    })
+  })).mutation(async ({ input, ctx }) => {
+    const { bookId, context } = input
+    const book = await db.query.books.findFirst({
+      where: and(eq(books.id, bookId), eq(books.userId, ctx.auth.user.id)),
+    });
 
+    if (!book) {
+      throw new Error('Book not found or unauthorized');
+    }
+
+    await db.update(books).set({
+      title: context.title
+    }).where(eq(books.id, bookId))
+
+
+  }),
   updateBookPages: protectedProcedure
     .input(z.object({
       bookId: z.string(),

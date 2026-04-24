@@ -123,7 +123,7 @@ export const videoGenerateWorkflow = inngest.createFunction(
             const videoIndex = i;
 
             if (i > 0) {
-                await step.sleep('delay-' + i, '2s');
+                await step.sleep('delay-' + i, '20s'); // 20-second delay between videos to prevent rating limiting
             }
 
             // Process each video in the list
