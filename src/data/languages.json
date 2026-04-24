@@ -1,0 +1,124 @@
+{
+    "major_languages": [
+        {
+            "name": "English",
+            "native_name": "English",
+            "iso_639_1": "en",
+            "region": "Global"
+        },
+        {
+            "name": "Mandarin Chinese",
+            "native_name": "普通话 (Putonghua)",
+            "iso_639_1": "zh",
+            "region": "China, Taiwan, Singapore"
+        },
+        {
+            "name": "Hindi",
+            "native_name": "हिन्दी",
+            "iso_639_1": "hi",
+            "region": "India"
+        },
+        {
+            "name": "Spanish",
+            "native_name": "Español",
+            "iso_639_1": "es",
+            "region": "Spain, Latin America"
+        },
+        {
+            "name": "French",
+            "native_name": "Français",
+            "iso_639_1": "fr",
+            "region": "France, Africa, Canada"
+        },
+        {
+            "name": "Arabic",
+            "native_name": "العربية",
+            "iso_639_1": "ar",
+            "region": "Middle East, North Africa"
+        },
+        {
+            "name": "Bengali",
+            "native_name": "বাংলা",
+            "iso_639_1": "bn",
+            "region": "Bangladesh, India"
+        },
+        {
+            "name": "Portuguese",
+            "native_name": "Português",
+            "iso_639_1": "pt",
+            "region": "Portugal, Brazil, Africa"
+        },
+        {
+            "name": "Russian",
+            "native_name": "Русский",
+            "iso_639_1": "ru",
+            "region": "Russia, Eastern Europe"
+        },
+        {
+            "name": "Urdu",
+            "native_name": "اردو",
+            "iso_639_1": "ur",
+            "region": "Pakistan"
+        },
+        {
+            "name": "Indonesian",
+            "native_name": "Bahasa Indonesia",
+            "iso_639_1": "id",
+            "region": "Indonesia"
+        },
+        {
+            "name": "German",
+            "native_name": "Deutsch",
+            "iso_639_1": "de",
+            "region": "Germany, Austria, Switzerland"
+        },
+        {
+            "name": "Japanese",
+            "native_name": "日本語",
+            "iso_639_1": "ja",
+            "region": "Japan"
+        },
+        {
+            "name": "Swahili",
+            "native_name": "Kiswahili",
+            "iso_639_1": "sw",
+            "region": "East Africa"
+        },
+        {
+            "name": "Marathi",
+            "native_name": "मराठी",
+            "iso_639_1": "mr",
+            "region": "India"
+        },
+        {
+            "name": "Telugu",
+            "native_name": "తెలుగు",
+            "iso_639_1": "te",
+            "region": "India"
+        },
+        {
+            "name": "Turkish",
+            "native_name": "Türkçe",
+            "iso_639_1": "tr",
+            "region": "Turkey"
+        },
+        {
+            "name": "Korean",
+            "native_name": "한국어",
+            "iso_639_1": "ko",
+            "region": "South Korea, North Korea"
+        },
+        {
+            "name": "Tamil",
+            "native_name": "தமிழ்",
+            "iso_639_1": "ta",
+            "region": "India, Sri Lanka"
+        },
+        {
+            "name": "Vietnamese",
+            "native_name": "Tiếng Việt",
+            "iso_639_1": "vi",
+            "region": "Vietnam"
+        }
+    ]
+}

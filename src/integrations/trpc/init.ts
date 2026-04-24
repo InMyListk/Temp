@@ -1,5 +1,5 @@
 import { session } from '@/db/auth-schema';
-import { auth } from '@/lib/auth';
+import { auth, polarClient } from '@/lib/auth';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestHeaders } from '@tanstack/react-start/server';
 import { initTRPC, TRPCError } from '@trpc/server'
@@ -29,4 +29,32 @@ export const protectedProcedure = publicProcedure.use(async ({ ctx, next }) => {
   }
 
   return next({ ctx: { ...ctx, auth: session }, })
+})
+export const premiumProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const customers = await polarClient.customers.list({
+    email: ctx.auth.user.email,
+  })
+
+  const customer = customers.result.items[0];
+
+  if (!customer) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: "Premium subscription required",
+    });
+  }
+
+  const userSubscriptionActive = await polarClient.subscriptions.list({
+    customerId: customer.id,
+    active: true,
+  });
+
+  if (!userSubscriptionActive.result.items.length) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: "Premium subscription required",
+    });
+  }
+
+  return next({ ctx: { ...ctx, auth: ctx.auth, userSubscriptionActive }, })
 })

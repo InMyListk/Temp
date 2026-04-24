@@ -1,11 +1,12 @@
 import { z } from 'zod'
-import { createTRPCRouter, protectedProcedure } from './init'
+import { createTRPCRouter, premiumProcedure, protectedProcedure } from './init'
 
 import { db } from '@/db'
 import { inngest } from '../inngest'
 import { books, pages } from '@/db/schema'
 import { eq, not, and, desc, asc } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
+import { title } from 'process'
 
 const todosRouter = createTRPCRouter({
   getUsers: protectedProcedure.query(({ ctx }) => {
@@ -13,7 +14,7 @@ const todosRouter = createTRPCRouter({
 
     return db.query.user.findMany()
   }),
-  
+
   getActiveBooks: protectedProcedure.query(async ({ ctx }) => {
     return db.query.books.findMany({
       where: and(
@@ -32,6 +33,13 @@ const todosRouter = createTRPCRouter({
         eq(books.status, 'completed')
       ),
       orderBy: [desc(books.createdAt)],
+      with: {
+        pages: {
+          columns: {
+            id: true,
+          }
+        }
+      }
     })
   }),
 
@@ -49,15 +57,16 @@ const todosRouter = createTRPCRouter({
       return book
     }),
 
-  generateBook: protectedProcedure
-    .input(z.object({ 
+  generateBook: premiumProcedure
+    .input(z.object({
       url: z.string().url(),
+      language: z.string().optional().default('English'),
       type: z.enum(['video', 'playlist']).optional().default('video'),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
         const bookId = randomUUID()
-        
+
         // Create initial book record
         await db.insert(books).values({
           id: bookId,
@@ -65,17 +74,19 @@ const todosRouter = createTRPCRouter({
           title: 'Processing...',
           videoUrl: input.url,
           status: 'queued',
+          language: input.language,
         })
 
         // Send the event to Inngest
-        console.log('Sending Inngest event for URL:', input.url, 'Type:', input.type)
+        console.log('Sending Inngest event for URL:', input.url, 'Type:', input.type, 'Language:', input.language, 'Book ID:', bookId)
         await inngest.send({
           name: 'video/generate',
-          data: { 
-            url: input.url, 
-            type: input.type, 
+          data: {
+            url: input.url,
+            type: input.type,
             userId: ctx.auth.user.id,
-            bookId // Pass the bookId
+            bookId, // Pass the bookId
+            language: input.language // Pass the language
           },
         })
 
@@ -84,6 +95,88 @@ const todosRouter = createTRPCRouter({
         console.error('Error sending Inngest event:', error)
         throw new Error('Failed to start generation')
       }
+    }),
+  updateBookInfo: protectedProcedure.input(z.object({
+    bookId: z.string(),
+    context: z.object({
+      title: z.string().optional(),
+    })
+  })).mutation(async ({ input, ctx }) => {
+    const { bookId, context } = input
+    const book = await db.query.books.findFirst({
+      where: and(eq(books.id, bookId), eq(books.userId, ctx.auth.user.id)),
+    });
+
+    if (!book) {
+      throw new Error('Book not found or unauthorized');
+    }
+
+    await db.update(books).set({
+      title: context.title
+    }).where(eq(books.id, bookId))
+
+
+  }),
+  updateBookPages: protectedProcedure
+    .input(z.object({
+      bookId: z.string(),
+      pages: z.array(z.string())
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { bookId, pages: newPages } = input;
+
+      // Verify ownership
+      const book = await db.query.books.findFirst({
+        where: and(eq(books.id, bookId), eq(books.userId, ctx.auth.user.id)),
+      });
+
+      if (!book) {
+        throw new Error('Book not found or unauthorized');
+      }
+
+      // get existing pages
+      const existingPages = await db.query.pages.findMany({
+        where: eq(pages.bookId, bookId),
+        orderBy: [asc(pages.pageNumber)],
+      });
+
+      // Sync pages
+      for (let i = 0; i < newPages.length; i++) {
+        const content = newPages[i];
+        const title = content.split('\n')[0].replace(/^#+\s*/, '').substring(0, 100) || `Page ${i + 1}`;
+
+        if (i < existingPages.length) {
+          // Update existing
+          await db.update(pages)
+            .set({
+              content,
+              title,
+              pageNumber: i,
+              updatedAt: new Date()
+            })
+            .where(eq(pages.id, existingPages[i].id));
+        } else {
+          // Create new
+          await db.insert(pages).values({
+            id: randomUUID(),
+            bookId,
+            content,
+            title,
+            pageNumber: i,
+            status: 'completed',
+          });
+        }
+      }
+
+      // Delete excess
+      if (existingPages.length > newPages.length) {
+        const pagesToDelete = existingPages.slice(newPages.length);
+        for (const page of pagesToDelete) {
+          await db.delete(pages).where(eq(pages.id, page.id));
+        }
+      }
+
+      return { success: true };
     }),
 })
 
